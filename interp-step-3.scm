@@ -230,20 +230,6 @@
     (equal? (replace* '((_.0 . x)) (car (car (run 1 (q) (eval-expo q '() q))))) quinec)
     #t)
 
-
-  (test-check "quine-eval-once-k-1"
-    ;; why is this so slooooow????    
-    (run 1 (q)
-      (== quinec q)
-      (eval-expo-cps q '() (eval-once-k q)))
-    '(((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))))
-
-  (test-check "quine-eval-once-k-2"
-    ;; takes several minutes, but does return      
-    (run 1 (q) (eval-expo-cps q '() (eval-once-k q)))
-    '(('((lambda (_.0) (list 'quote (list _.0 (list 'quote _.0)))) '(lambda (_.0) (list 'quote (list _.0 (list 'quote _.0))))) (=/= ((_.0 closure)) ((_.0 list)) ((_.0 quote))) (sym _.0))))
-
-
 ;;;
 
   (test-check "apply-ko-1"
@@ -335,6 +321,18 @@
          '(lambda (_.0) (list 'quote (list _.0 (list 'quote _.0))))))
        (=/= ((_.0 closure)) ((_.0 list)) ((_.0 quote)))
        (sym _.0))))
+
+  (test-check "quine-eval-once-k-1"
+    ;; why is this so slooooow????    
+    (run 1 (q)
+      (== quinec q)
+      (eval-expo-cps q '() (eval-once-k q)))
+    '(((lambda (x) (list x (list 'quote x))) '(lambda (x) (list x (list 'quote x))))))
+
+  (test-check "quine-eval-once-k-2"
+    ;; takes several minutes, but does return      
+    (run 1 (q) (eval-expo-cps q '() (eval-once-k q)))
+    '(('((lambda (_.0) (list 'quote (list _.0 (list 'quote _.0)))) '(lambda (_.0) (list 'quote (list _.0 (list 'quote _.0))))) (=/= ((_.0 closure)) ((_.0 list)) ((_.0 quote))) (sym _.0))))
 
   (test-check "quine-gen-4-a"
     (run 1 (x)
