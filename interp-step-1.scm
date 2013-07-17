@@ -266,7 +266,7 @@
       (eval-expo q '() '(closure y y ())))
     '((lambda (y) y)
       (((lambda (_.0) _.0) (lambda (y) y)) (sym _.0))
-      (((lambda (_.0) (_.0 _.0)) (lambda (y) y)) (sym _.0))))
+      ((((lambda (_.0) (lambda (_.1) _.1)) '_.2) (lambda (y) y)) (=/= ((_.0 lambda))) (sym _.0 _.1) (absento (closure _.2)))))
 
   (test-check "backwards-2"
     (run 10 (q)
