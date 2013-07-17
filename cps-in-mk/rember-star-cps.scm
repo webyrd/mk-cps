@@ -100,18 +100,47 @@
         '((a (z ((x) z)) () (()) ((x)) z ((())))))
 
 
-      (test-check (string-append "rember*o-0-" name)
+      (test-check (string-append "rember*o-0b-" name)
         (run* (q) (rember*o 'y '() '()))
         '(_.0))
 
-      (test-check (string-append "rember*o-1-" name)
+      (test-check (string-append "rember*o-1b-" name)
         (run* (q) (rember*o 'y '() q))
         '(()))
 
-      (test-check (string-append "rember*o-2-" name)
+      (test-check (string-append "rember*o-2b-" name)
         (run* (q) (rember*o 'y '(a z y x y y z y) q))
         '((a z x z)))
 
+      (test-check (string-append "rember*o-3b-" name)
+        (run* (q) (rember*o 'y '(a z x z) q))
+        '((a z x z)))
+
+      (test-check (string-append "rember*o-4b-" name)
+        (run* (q) (rember*o 'y '(y y a z x y z y) q))
+        '((a z x z)))
+
+      (test-check (string-append "rember*o-9b-" name)
+        (run* (q) (rember*o 'y '(()) q))
+        '((())))
+
+      (test-check (string-append "rember*o-8b-" name)
+        (run* (q) (rember*o 'y '(() (())) q))
+        '((() (()))))
+      
+      (test-check (string-append "rember*o-7b-" name)
+        (run* (q) (rember*o 'y '(x (w y) z) q))
+        '((x (w) z)))
+      
+      (test-check (string-append "rember*o-6b-" name)
+        (run* (q) (rember*o 'y '((y)) q))
+        '((())))
+      
+      (test-check (string-append "rember*o-5b-" name)
+        (run* (q) (rember*o 'y '(a (z y ((x y) z y) y) () (()) ((x)) z (((y)))) q))
+        '((a (z ((x) z)) () (()) ((x)) z ((())))))
+
+      
 ;;; *** TODO add more tests to make code diverge when not using reconnecting trick
       
       
