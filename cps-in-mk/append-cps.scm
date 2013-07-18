@@ -122,7 +122,47 @@
           ((a b c d e _.0 _.1) _.2)
           ((a b c d e _.0 _.1 _.2) _.3)
           ((a b c d e _.0 _.1 _.2 _.3) _.4)))
+
+      (test-check (string-append "appendo-2-c-" name)
+        (run 1 (q) (appendo q '(b) '(a b)))
+        '((a)))
+
+      (test-check (string-append "appendo-2-d-" name)
+        (run 1 (q) (appendo q '(b) '(a b)))
+        '((a)))
+
+      (test-check (string-append "appendo-2-j-" name)
+        (run 1 (q) (appendo q '() '()))
+        '(()))
+
+      (test-check (string-append "appendo-2-k-" name)
+        (run 2 (q) (appendo q '() '()))
+        '(()))
+
+      (test-check (string-append "appendo-2-l-" name)
+        (run* (q) (appendo q '() '()))
+        '(()))
+            
+      (test-check (string-append "appendo-2-g-" name)
+        (run 1 (q) (appendo q '() '(a)))
+        '((a)))
+
+      (test-check (string-append "appendo-2-h-" name)
+        (run 2 (q) (appendo q '() '(a)))
+        '((a)))
+
+      (test-check (string-append "appendo-2-i-" name)
+        (run* (q) (appendo q '() '(a)))
+        '((a)))      
       
+      (test-check (string-append "appendo-2-e-" name)
+        (run 2 (q) (appendo q '(b) '(a b)))
+        '((a)))
+
+      (test-check (string-append "appendo-2-f-" name)
+        (run* (q) (appendo q '(b) '(a b)))
+        '((a)))
+            
       (test-check (string-append "appendo-2-b-" name)
         (run* (q) (appendo q '(d e) '(a b c d e)))
         '((a b c)))
@@ -187,7 +227,7 @@
     
   )
 
-;; CPS it
+;; CPS it, with trick
 (let ()
 
   (define appendo-cps
@@ -198,7 +238,7 @@
         [(fresh (a d res)
            (== `(,a . ,d) l)
 
-           ;; trick (still works!!)
+           ;; trick
            (k `(,a . ,res))
            
            (appendo-cps d s (lambda (v)
@@ -213,8 +253,60 @@
     (lambda (l s out)
       (appendo-cps l s (lambda (v) (== out v)))))
   
-  (printf "testing CPSed appendo\n")
+  (printf "testing CPSed appendo with trick\n")
   
-  (appendo-tests appendo "appendo-cps")
+  (appendo-tests appendo "appendo-cps-with-trick")
+    
+  )
+
+;; CPS it, with trick, simplified
+(let ()
+
+  (define appendo-cps
+    (lambda (l s k)
+      (conde
+        [(== '() l)
+         (k s)]
+        [(fresh (a d res)
+           (== `(,a . ,d) l)
+
+           ;; trick
+           (k `(,a . ,res))
+           
+           (appendo-cps d s (lambda (v) (== res v))))])))
+
+  (define appendo
+    (lambda (l s out)
+      (appendo-cps l s (lambda (v) (== out v)))))
+  
+  (printf "testing CPSed appendo with trick, simplified\n")
+  
+  (appendo-tests appendo "appendo-cps-with-trick, simplified")
+    
+  )
+
+
+;; CPS it, without trick (diverges!!)
+(let ()
+
+  (define appendo-cps
+    (lambda (l s k)
+      (conde
+        [(== '() l)
+         (k s)]
+        [(fresh (a d)
+           (== `(,a . ,d) l)
+           (appendo-cps d s (lambda (v)
+                              (k `(,a . ,v)))))])))
+
+  (define appendo
+    (lambda (l s out)
+      (appendo-cps l s (lambda (v) (== out v)))))
+  
+  (printf "testing CPSed appendo without trick\n")
+
+;  uncomment to run (divergent) tests
+;  (appendo-tests appendo "appendo-cps-without-trick")
+  'dummy
     
   )
