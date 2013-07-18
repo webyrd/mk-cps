@@ -55,7 +55,7 @@
 
       )))
 
-(define rember*o-tests
+(define rember*o-simple-tests
   (lambda (rember*o name)
     (let ()
 
@@ -107,6 +107,26 @@
         (run 1 (q) (rember*o 'y '(a z y x y y z y) `(a z x z . ,q)))
         '(()))
 
+      (test-check (string-append "rember*o-13-" name)
+        (run 1 (q) (rember*o 'y q '()))
+        '(()))
+
+      (test-check (string-append "rember*o-13b-" name)
+        (run 2 (q) (rember*o 'y q '()))
+        '(() (y)))
+
+      (test-check (string-append "rember*o-13c-" name)
+        (run 1 (q) (rember*o 'y q '(a)))
+        '((a)))
+
+      (test-check (string-append "rember*o-13d-" name)
+        (run 2 (q) (rember*o 'y q '(a)))
+        '((a) (a y)))
+
+      (test-check (string-append "rember*o-13e-" name)
+        (run 1 (q) (rember*o 'y q '((a))))
+        '(((a))))
+
 ;;;      
 
       (test-check (string-append "rember*o-0b-" name)
@@ -156,11 +176,96 @@
       (test-check (string-append "rember*o-11b-" name)
         (run* (q) (rember*o 'y '(a z y x y y z y) `(a z x z . ,q)))
         '(()))  
-      
-;;; *** TODO add more tests to make code diverge when not using reconnecting trick
-      
+
+      (test-check (string-append "rember*o-12b-" name)
+        (run* (q) (rember*o 'y '(a z ((y) x) y y z y) `(a z (() x) z . ,q)))
+        '(()))
+
+;;; ordering of answers can change, based on goal ordering      
+      ;; (test-check (string-append "rember*o-13f-" name)
+      ;;   (run 10 (q) (rember*o 'y q '((a))))
+      ;;   '(((a))
+      ;;     ((a) y)
+      ;;     ((a) y y)
+      ;;     (y (a))
+      ;;     ((a) y y y)
+      ;;     ((a) y y y y)
+      ;;     ((a y))
+      ;;     (y (a) y)
+      ;;     ((a) y y y y y)
+      ;;     ((a) y y y y y y)))      
       
       )))
+
+(define rember*o-divergent-tests
+  (lambda (rember*o name)
+    (let ()
+
+      (test-check (string-append "rember*o-tricky-1-" name)        
+        (run* (q)
+          (fresh (ra rb)
+            (rember*o 'y `(x . ,ra) `(z . ,rb))))
+        '())
+      
+      (test-check (string-append "rember*o-tricky-2-" name)
+        (run* (q)
+          (fresh (ra rb)
+            (rember*o 'y `((x) . ,ra) `((z) . ,rb))))
+        '())
+      
+      )))
+
+(define rember*o-long-tests
+  (lambda (rember*o name)
+    (let ()
+
+      (test-check (string-append "rember*o-15-" name)
+        (run 1 (q) (rember*o 'y q '(a z z)))
+        '((a z z)))
+
+      (test-check (string-append "rember*o-16-" name)
+        (run 1 (q) (rember*o 'y q '(a z () z)))
+        '((a z () z)))      
+
+      (test-check (string-append "rember*o-17-" name)
+        (run 1 (q) (rember*o 'y q '(a z (()) z)))
+        '((a z (()) z)))
+
+      (test-check (string-append "rember*o-18-" name)
+        (run 1 (q) (rember*o 'y q '(a z (() x))))
+        '((a z (() x))))
+
+      (test-check (string-append "rember*o-14-" name)
+        (run 1 (q) (rember*o 'y q '(a z (() x) z)))
+        '((a z (() x) z)))
+      
+;;; seems like a potentially unfair test, since it may take less or
+;;; more time depending on goal ordering.
+      (test-check (string-append "rember*o-14b-" name)
+        (run 10 (q) (rember*o 'y q '(a z (() x) z)))
+        '((a z (() x) z)
+          (a z (() x) z y)
+          (a z (() x) z y y)
+          (a z (() x) y z)
+          (a z y (() x) z)
+          (a z (() x) z y y y)
+          (a z (() x) z y y y y)
+          (a z (y () x) z)
+          (a z y (() x) z y)
+          (a z (() x) z y y y y y)))
+      
+      )))
+
+(define rember*o-tests
+  (lambda (rember*o name)
+
+    (rember*o-simple-tests rember*o (string-append name "-simple"))
+
+    (rember*o-divergent-tests rember*o (string-append name "-divergent"))
+    
+    (rember*o-long-tests rember*o (string-append name "-long"))
+    
+    ))
 
 ;; direct style Scheme
 (let ()
@@ -257,36 +362,9 @@
              [(=/= x y)
               (fresh (res)
                 (== `(,y . ,res) out)
-                (rember*o x d res))]))])))  
- (rember*o-tests rember*o "miniKanrenizing direct-style rember*")
+                (rember*o x d res))]))])))
   
-  )
-
-;; miniKanrenizing direct-style rember*, original goal ordering
-(let ()
-
-  (define rember*o
-    (lambda (x t out)
-      (conde
-        [(== '() t) (== '() out)]
-        [(fresh (a d aa da res-a res-d)
-           (== `(,a . ,d) t)
-           (conde
-             [(== `(,aa . ,da) a)]
-             [(== '() a)])
-           (rember*o x a res-a)
-           (rember*o x d res-d)
-           (== `(,res-a . ,res-d) out))]
-        [(fresh (y d)
-           (== `(,y . ,d) t)
-           (symbolo y)
-           (conde
-             [(== x y) (rember*o x d out)]
-             [(=/= x y)
-              (fresh (res)
-                (rember*o x d res)
-                (== `(,y . ,res) out))]))])))  
- (rember*o-tests rember*o "miniKanrenizing direct-style rember*, original goal ordering")
+ (rember*o-tests rember*o "miniKanrenizing direct-style rember*")
   
   )
 
@@ -302,7 +380,10 @@
            (conde
              [(== `(,aa . ,da) a)]
              [(== '() a)])
+
+           ; trick
            (k `(,res-a . ,res-d))
+           
            (rember*o-cps x a (lambda (v)
                                (fresh ()
 
@@ -320,20 +401,33 @@
            (conde
              [(== x y) (rember*o-cps x d k)]
              [(=/= x y)
-              (rember*o-cps x d (lambda (v)
-                                  ;; **** TODO do I need to reconnect the wires here as well?
-                                  (k `(,y . ,v))))]))])))
+              (fresh (res)
+                ; trick
+
+                (k `(,y . ,res))
+                
+                (rember*o-cps x d (lambda (v)
+                                    (fresh ()
+
+                                      (== v res)
+                                    
+                                      (k `(,y . ,res))))))]))])))
 
   (define rember*o
     (lambda (x t out)
       (rember*o-cps x t (lambda (v) (== out v)))))
   
-  (rember*o-tests rember*o "CPS in miniKanren, with shortcuts")
-  
+  (rember*o-simple-tests rember*o (string-append "CPS in miniKanren, with shortcuts" "-simple"))
+
+  (rember*o-divergent-tests rember*o (string-append "CPS in miniKanren, with shortcuts" "-divergent"))
+
+  ; long tests take a looong time
+;  (rember*o-long-tests rember*o (string-append "CPS in miniKanren, with shortcuts" "-long"))
+      
   )
 
 
-;; CPS in miniKanren
+;; CPS in miniKanren, no shortcuts
 (let ()
 
   (define rember*o-cps
@@ -361,6 +455,49 @@
     (lambda (x t out)
       (rember*o-cps x t (lambda (v) (== out v)))))
   
-  (rember*o-tests rember*o "CPS in miniKanren")
+
+  (rember*o-simple-tests rember*o (string-append "CPS in miniKanren, no shortcuts" "-simple"))
+
+  ; divergent tests diverge!!
+;  (rember*o-divergent-tests rember*o (string-append "CPS in miniKanren, no shortcuts" "-divergent"))
+
+  ; long tests take a looong time, and might even diverge
+;  (rember*o-long-tests rember*o (string-append "CPS in miniKanren, no shortcuts" "-long"))
+  
+  )
+
+
+;; miniKanrenizing direct-style rember*, original goal ordering
+(let ()
+
+  (define rember*o
+    (lambda (x t out)
+      (conde
+        [(== '() t) (== '() out)]
+        [(fresh (a d aa da res-a res-d)
+           (== `(,a . ,d) t)
+           (conde
+             [(== `(,aa . ,da) a)]
+             [(== '() a)])
+           (rember*o x a res-a)
+           (rember*o x d res-d)
+           (== `(,res-a . ,res-d) out))]
+        [(fresh (y d)
+           (== `(,y . ,d) t)
+           (symbolo y)
+           (conde
+             [(== x y) (rember*o x d out)]
+             [(=/= x y)
+              (fresh (res)
+                (rember*o x d res)
+                (== `(,y . ,res) out))]))])))
+
+  (rember*o-simple-tests rember*o (string-append "miniKanrenizing direct-style rember*, original goal ordering" "-simple"))
+
+  ; divergent tests diverge!!
+;  (rember*o-divergent-tests rember*o (string-append "miniKanrenizing direct-style rember*, original goal ordering" "-divergent"))
+
+  ; long tests take a looong time, and might even diverge
+;  (rember*o-long-tests rember*o (string-append "miniKanrenizing direct-style rember*, original goal ordering" "-long"))
   
   )
